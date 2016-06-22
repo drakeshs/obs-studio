@@ -27,10 +27,10 @@ static void OBSStreamStopping(void *data, calldata_t *params)
 
 	int sec = (int)obs_output_get_active_delay(obj);
 	if (sec == 0)
-		return;
-
-	QMetaObject::invokeMethod(output->main,
-			"StreamDelayStopping", Q_ARG(int, sec));
+		QMetaObject::invokeMethod(output->main, "StreamStopping");
+	else
+		QMetaObject::invokeMethod(output->main,
+				"StreamDelayStopping", Q_ARG(int, sec));
 }
 
 static void OBSStartStreaming(void *data, calldata_t *params)
@@ -73,6 +73,12 @@ static void OBSStopRecording(void *data, calldata_t *params)
 			"RecordingStop", Q_ARG(int, code));
 
 	UNUSED_PARAMETER(params);
+}
+
+static void OBSRecordStopping(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler*>(data);
+	QMetaObject::invokeMethod(output->main, "RecordStopping");
 }
 
 static void FindBestFilename(string &strPath, bool noSpace)
@@ -281,7 +287,7 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 
 	streamDelayStarting.Connect(obs_output_get_signal_handler(streamOutput),
 			"starting", OBSStreamStarting, this);
-	streamDelayStopping.Connect(obs_output_get_signal_handler(streamOutput),
+	streamStopping.Connect(obs_output_get_signal_handler(streamOutput),
 			"stopping", OBSStreamStopping, this);
 
 	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
@@ -304,6 +310,8 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			"start", OBSStartRecording, this);
 	stopRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"stop", OBSStopRecording, this);
+	recordStopping.Connect(obs_output_get_signal_handler(fileOutput),
+			"stopping", OBSRecordStopping, this);
 }
 
 int SimpleOutput::GetAudioBitrate() const
@@ -762,7 +770,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 
 	streamDelayStarting.Connect(obs_output_get_signal_handler(streamOutput),
 			"starting", OBSStreamStarting, this);
-	streamDelayStopping.Connect(obs_output_get_signal_handler(streamOutput),
+	streamStopping.Connect(obs_output_get_signal_handler(streamOutput),
 			"stopping", OBSStreamStopping, this);
 
 	startStreaming.Connect(obs_output_get_signal_handler(streamOutput),
@@ -774,6 +782,8 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			"start", OBSStartRecording, this);
 	stopRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			"stop", OBSStopRecording, this);
+	recordStopping.Connect(obs_output_get_signal_handler(fileOutput),
+			"stopping", OBSRecordStopping, this);
 }
 
 void AdvancedOutput::UpdateStreamSettings()
